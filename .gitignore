@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+test-results.xml
+kubeconfig-jenkins.yaml

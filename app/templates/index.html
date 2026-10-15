@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Manager · CI/CD Demo</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --ok:#4ade80; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    main { max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 4px; }
+    .meta { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+    .badge { display:inline-block; background:var(--card); border:1px solid #334155; border-radius:999px; padding:2px 10px; margin-right:6px; }
+    .badge b { color: var(--accent); }
+    form { display:flex; gap:8px; margin-bottom: 16px; }
+    input { flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:var(--card); color:var(--text); }
+    button { padding:10px 16px; border:0; border-radius:8px; background:var(--accent); color:#0f172a; font-weight:600; cursor:pointer; }
+    ul { list-style:none; padding:0; }
+    li { display:flex; align-items:center; gap:10px; background:var(--card); padding:12px; border-radius:8px; margin-bottom:8px; }
+    li.done span { text-decoration: line-through; color: var(--muted); }
+    li span { flex:1; cursor:pointer; }
+    .del { background:transparent; color:#f87171; padding:4px 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>✅ Task Manager</h1>
+  <div class="meta">
+    <span class="badge">Version <b>{{ version }}</b></span>
+    <span class="badge">Build <b>#{{ build }}</b></span>
+    <span class="badge">Pod <b>{{ hostname }}</b></span>
+  </div>
+  <form id="f"><input id="t" placeholder="Add a task..." autocomplete="off"><button>Add</button></form>
+  <ul id="list"></ul>
+</main>
+<script>
+  const list = document.getElementById('list');
+  async function load() {
+    const res = await fetch('/api/tasks');
+    const tasks = await res.json();
+    list.innerHTML = '';
+    tasks.forEach(t => {
+      const li = document.createElement('li');
+      if (t.done) li.className = 'done';
+      const s = document.createElement('span');
+      s.textContent = t.title;
+      s.onclick = async () => { await fetch('/api/tasks/' + t.id, {method:'PUT'}); load(); };
+      const d = document.createElement('button');
+      d.className = 'del'; d.textContent = '✕';
+      d.onclick = async () => { await fetch('/api/tasks/' + t.id, {method:'DELETE'}); load(); };
+      li.append(s, d);
+      list.append(li);
+    });
+  }
+  document.getElementById('f').onsubmit = async e => {
+    e.preventDefault();
+    const inp = document.getElementById('t');
+    if (!inp.value.trim()) return;
+    await fetch('/api/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title: inp.value})});
+    inp.value = ''; load();
+  };
+  load();
+</script>
+</body>
+</html>
